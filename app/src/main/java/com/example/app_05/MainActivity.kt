@@ -1,9 +1,12 @@
 package com.example.app_05
 
+// Import các thư viện Android cần thiết
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+
+// Import các thư viện Jetpack Compose cho UI
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,14 +20,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+// Import theme tùy chỉnh của ứng dụng
 import com.example.app_05.ui.theme.App_05Theme
 
+/**
+ * MainActivity - Lớp chính của ứng dụng máy tính
+ * Kế thừa từ ComponentActivity để hỗ trợ Jetpack Compose
+ */
 class MainActivity : ComponentActivity() {
+    /**
+     * Phương thức onCreate được gọi khi Activity được khởi tạo
+     * Thiết lập giao diện người dùng và cấu hình cơ bản
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge() // Cho phép hiển thị full màn hình
         setContent {
-            App_05Theme {
+            App_05Theme { // Áp dụng theme tùy chỉnh
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Calculator(modifier = Modifier.padding(innerPadding))
                 }
@@ -33,24 +46,40 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Calculator - Composable chính hiển thị giao diện máy tính
+ * @param modifier Modifier để tùy chỉnh layout và appearance
+ */
 @Composable
 fun Calculator(modifier: Modifier = Modifier) {
-    var expression by remember { mutableStateOf("") }
-    var display by remember { mutableStateOf("0") }
-    var previousValue by remember { mutableStateOf(0.0) }
-    var operation by remember { mutableStateOf("") }
-    var waitingForOperand by remember { mutableStateOf(false) }
+    // Các state variables quản lý trạng thái của máy tính
+    var expression by remember { mutableStateOf("") }        // Biểu thức toán học được hiển thị
+    var display by remember { mutableStateOf("0") }          // Giá trị hiện tại trên màn hình
+    var previousValue by remember { mutableStateOf(0.0) }    // Giá trị trước đó để tính toán
+    var operation by remember { mutableStateOf("") }         // Phép toán hiện tại (+, -, ×, ÷)
+    var waitingForOperand by remember { mutableStateOf(false) } // Đang chờ số mới hay không
 
+    /**
+     * Định dạng số hiển thị - loại bỏ phần thập phân nếu là số nguyên
+     * @param value Giá trị số cần định dạng
+     * @return Chuỗi đã được định dạng
+     */
     fun formatNumber(value: Double): String {
         return if (value % 1.0 == 0.0) value.toInt().toString() else value.toString()
     }
 
+    /**
+     * Xử lý khi người dùng nhập số
+     * @param number Chuỗi số được nhập vào (0-9)
+     */
     fun inputNumber(number: String) {
         if (waitingForOperand) {
+            // Nếu đang chờ số mới, thay thế display và thêm vào biểu thức
             display = number
             expression = expression + " " + number
             waitingForOperand = false
         } else {
+            // Nếu đang nhập tiếp, nối số vào display hiện tại
             display = if (display == "0") number else display + number
             if (expression.isEmpty() || expression.endsWith(" ")) {
                 expression = expression + number
@@ -63,10 +92,15 @@ fun Calculator(modifier: Modifier = Modifier) {
         }
     }
 
+    /**
+     * Xử lý khi người dùng chọn phép toán (+, -, ×, ÷)
+     * @param nextOperation Phép toán được chọn
+     */
     fun inputOperation(nextOperation: String) {
         val inputValue = display.toDoubleOrNull() ?: 0.0
 
         if (operation.isNotEmpty() && !waitingForOperand) {
+            // Nếu có phép toán đang chờ và đã có số mới, thực hiện tính toán
             val result = when (operation) {
                 "+" -> previousValue + inputValue
                 "-" -> previousValue - inputValue
@@ -78,6 +112,7 @@ fun Calculator(modifier: Modifier = Modifier) {
             expression = formatNumber(result) + " " + nextOperation
             previousValue = result
         } else {
+            // Lưu giá trị hiện tại và thiết lập phép toán mới
             previousValue = inputValue
             if (expression.isEmpty()) {
                 expression = display + " " + nextOperation
@@ -94,10 +129,15 @@ fun Calculator(modifier: Modifier = Modifier) {
         operation = nextOperation
     }
 
+    /**
+     * Thực hiện phép tính khi người dùng nhấn nút "="
+     * Hiển thị kết quả cuối cùng và reset trạng thái
+     */
     fun calculate() {
         val inputValue = display.toDoubleOrNull() ?: 0.0
         
         if (operation.isNotEmpty() && !waitingForOperand) {
+            // Thực hiện phép tính dựa trên phép toán đã chọn
             val result = when (operation) {
                 "+" -> previousValue + inputValue
                 "-" -> previousValue - inputValue
@@ -107,12 +147,18 @@ fun Calculator(modifier: Modifier = Modifier) {
             }
             display = formatNumber(result)
             expression = expression + " = " + formatNumber(result)
+            
+            // Reset trạng thái sau khi tính toán
             previousValue = 0.0
             operation = ""
             waitingForOperand = true
         }
     }
 
+    /**
+     * Xóa tất cả dữ liệu và reset máy tính về trạng thái ban đầu
+     * Được gọi khi người dùng nhấn nút "C" (Clear)
+     */
     fun clear() {
         expression = ""
         display = "0"
@@ -121,6 +167,7 @@ fun Calculator(modifier: Modifier = Modifier) {
         waitingForOperand = false
     }
 
+    // Layout chính của máy tính với background đen
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -128,7 +175,7 @@ fun Calculator(modifier: Modifier = Modifier) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Display
+        // Khu vực hiển thị (Display Area)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -142,7 +189,7 @@ fun Calculator(modifier: Modifier = Modifier) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Hiển thị biểu thức
+                // Hiển thị biểu thức toán học (phía trên)
                 Text(
                     text = if (expression.isEmpty()) "" else expression,
                     modifier = Modifier
@@ -153,7 +200,7 @@ fun Calculator(modifier: Modifier = Modifier) {
                     maxLines = 2
                 )
                 
-                // Hiển thị số hiện tại
+                // Hiển thị số hiện tại (phía dưới, lớn hơn)
                 Text(
                     text = display,
                     modifier = Modifier
@@ -166,22 +213,24 @@ fun Calculator(modifier: Modifier = Modifier) {
             }
         }
 
-        // Buttons
+        // Khu vực các nút bấm (Button Area)
         val buttonModifier = Modifier
-            .aspectRatio(1f)
-            .weight(1f)
+            .aspectRatio(1f)  // Tỷ lệ 1:1 để tạo nút vuông
+            .weight(1f)       // Phân bổ đều không gian
 
-        // First row
+        // Hàng thứ nhất: C, ±, %, ÷
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Nút Clear - xóa tất cả
             CalculatorButton(
                 text = "C",
                 onClick = { clear() },
                 modifier = buttonModifier,
                 backgroundColor = Color.Gray
             )
+            // Nút đổi dấu +/-
             CalculatorButton(
                 text = "±",
                 onClick = { 
@@ -202,6 +251,7 @@ fun Calculator(modifier: Modifier = Modifier) {
                 modifier = buttonModifier,
                 backgroundColor = Color.Gray
             )
+            // Nút phần trăm
             CalculatorButton(
                 text = "%",
                 onClick = { 
@@ -220,6 +270,7 @@ fun Calculator(modifier: Modifier = Modifier) {
                 modifier = buttonModifier,
                 backgroundColor = Color.Gray
             )
+            // Nút chia
             CalculatorButton(
                 text = "÷",
                 onClick = { inputOperation("÷") },
@@ -228,7 +279,7 @@ fun Calculator(modifier: Modifier = Modifier) {
             )
         }
 
-        // Second row
+        // Hàng thứ hai: 7, 8, 9, ×
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -248,6 +299,7 @@ fun Calculator(modifier: Modifier = Modifier) {
                 onClick = { inputNumber("9") },
                 modifier = buttonModifier
             )
+            // Nút nhân
             CalculatorButton(
                 text = "×",
                 onClick = { inputOperation("×") },
@@ -256,7 +308,7 @@ fun Calculator(modifier: Modifier = Modifier) {
             )
         }
 
-        // Third row
+        // Hàng thứ ba: 4, 5, 6, -
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -276,6 +328,7 @@ fun Calculator(modifier: Modifier = Modifier) {
                 onClick = { inputNumber("6") },
                 modifier = buttonModifier
             )
+            // Nút trừ
             CalculatorButton(
                 text = "-",
                 onClick = { inputOperation("-") },
@@ -284,7 +337,7 @@ fun Calculator(modifier: Modifier = Modifier) {
             )
         }
 
-        // Fourth row
+        // Hàng thứ tư: 1, 2, 3, +
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -304,6 +357,7 @@ fun Calculator(modifier: Modifier = Modifier) {
                 onClick = { inputNumber("3") },
                 modifier = buttonModifier
             )
+            // Nút cộng
             CalculatorButton(
                 text = "+",
                 onClick = { inputOperation("+") },
@@ -312,18 +366,20 @@ fun Calculator(modifier: Modifier = Modifier) {
             )
         }
 
-        // Fifth row
+        // Hàng thứ năm: 0 (rộng gấp đôi), ., =
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Nút số 0 có kích thước gấp đôi
             CalculatorButton(
                 text = "0",
                 onClick = { inputNumber("0") },
                 modifier = Modifier
-                    .aspectRatio(2f)
-                    .weight(2f)
+                    .aspectRatio(2f)  // Tỷ lệ 2:1 để rộng gấp đôi
+                    .weight(2f)       // Chiếm 2 phần không gian
             )
+            // Nút dấu thập phân
             CalculatorButton(
                 text = ".",
                 onClick = { 
@@ -341,6 +397,7 @@ fun Calculator(modifier: Modifier = Modifier) {
                 },
                 modifier = buttonModifier
             )
+            // Nút bằng để thực hiện phép tính
             CalculatorButton(
                 text = "=",
                 onClick = { calculate() },
@@ -351,28 +408,39 @@ fun Calculator(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * CalculatorButton - Composable tạo nút bấm cho máy tính
+ * @param text Văn bản hiển thị trên nút
+ * @param onClick Hàm callback khi nút được nhấn
+ * @param modifier Modifier để tùy chỉnh layout
+ * @param backgroundColor Màu nền của nút (mặc định là xám đậm)
+ */
 @Composable
 fun CalculatorButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color(0xFF333333)
+    backgroundColor: Color = Color(0xFF333333) // Màu xám đậm mặc định
 ) {
     Button(
         onClick = onClick,
         modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(20.dp), // Bo góc 20dp
         colors = ButtonDefaults.buttonColors(containerColor = backgroundColor)
     ) {
         Text(
             text = text,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
+            fontSize = 24.sp,              // Kích thước chữ lớn
+            fontWeight = FontWeight.Bold,   // Chữ đậm
+            color = Color.White             // Màu chữ trắng
         )
     }
 }
 
+/**
+ * CalculatorPreview - Preview cho giao diện máy tính
+ * Sử dụng để xem trước giao diện trong Android Studio Design view
+ */
 @Preview(showBackground = true)
 @Composable
 fun CalculatorPreview() {
